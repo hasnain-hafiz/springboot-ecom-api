@@ -1,219 +1,180 @@
-# Course Finder API
+# 📚 Java / Spring Boot Elasticsearch - Course Search Application
 
-A Spring Boot application that provides powerful course search functionality using Elasticsearch.
-
----
-
-## 🚀 Quick Start
-
-### 1. Prerequisites
-
-- **Docker & Docker Compose** (for Elasticsearch)
-- **Java 23**
-- **Maven**
-- **curl** (for API testing)
+A Spring Boot application that integrates with **Elasticsearch** to index and search educational course data with rich filters and full-text capabilities.
 
 ---
 
-### 2. Launch Elasticsearch
+## 🚀 Features
 
-Start Elasticsearch with Docker Compose:
+- 🔍 Full-text search on course title & description
+- 🎯 Filter by category, type, age, price, and date
+- 📊 Pagination and sorting (by date or price)
+- 🐳 Dockerized Elasticsearch setup
+- 📁 Bulk indexing from `sample-courses.json`
+
+---
+
+## ⚙️ Prerequisites
+
+- Java 17+
+- Maven
+- Docker & Docker Compose
+
+---
+
+## 🐋 Run Elasticsearch
+
+Make sure Docker is running. Then start Elasticsearch:
+
 ```bash
 docker-compose up -d
 ```
-Verify it's running:
+
+Verify it’s running:
+
 ```bash
 curl http://localhost:9200
 ```
-You should see a response similar to:
+
+---
+
+## 📦 Sample Data Format
+
+Place your data file here:
+
+```
+src/main/resources/sample-courses.json
+```
+
+Each object must have:
+
 ```json
 {
-  "name": "elasticsearch-node1",
-  "cluster_name": "docker-cluster",
-  "version": { "number": "8.x.x", ... }
+  "id": "course-001",
+  "title": "Math Basics",
+  "description": "Introductory math course.",
+  "category": "Math",
+  "type": "COURSE",
+  "gradeRange": "1st–3rd",
+  "minAge": 6,
+  "maxAge": 8,
+  "price": 599.99,
+  "nextSessionDate": "2025-06-10T15:00:00Z"
 }
 ```
 
 ---
 
-### 3. Build & Run the Application
+## 🛠 Run the Application
+
+Clone the repo:
 
 ```bash
-# Build the application
-mvn clean package
+git clone <your-repo-url>
+cd <project-directory>
+```
 
-# Run the application
+Build and start:
+
+```bash
+mvn clean install
 mvn spring-boot:run
 ```
-The API will start at: [http://localhost:8080](http://localhost:8080)
 
 ---
 
-### 4. Configuration
+## 🔄 Data Indexing
 
-Application configuration (`src/main/resources/application.properties`):
-```properties
-# Elasticsearch
-spring.elasticsearch.uris=http://localhost:9200
-spring.elasticsearch.connection-timeout=5s
-spring.elasticsearch.socket-timeout=3s
-
-# Application
-server.port=8080
-```
-
----
-
-### 5. Data Population
-
-Sample data loads automatically at startup.
+On startup, the app reads `sample-courses.json` and bulk indexes all course objects into the `courses` index.
 
 To verify:
-```bash
-# Check index exists
-curl http://localhost:9200/courses
 
-# Count documents
-curl http://localhost:9200/courses/_count
-```
-Example count response:
-```json
-{
-  "count": 100,
-  "_shards": { "total": 1, "successful": 1, "skipped": 0, "failed": 0 }
-}
+```bash
+curl http://localhost:9200/courses/_search?pretty
 ```
 
 ---
 
-## 📝 API Documentation
+## 🔍 Search Endpoint
 
-### Search Endpoint
+**URL:**
 
-**Base URL:**  
-`GET /api/search/`
+```
+GET /api/search
+```
 
-#### Query Parameters
+### Query Parameters:
 
-| Name           | Type     | Description                                              |
-|----------------|----------|----------------------------------------------------------|
-| `query`        | string   | Text to search in title and description (optional)       |
-| `category`     | string   | Filter by category (optional)                            |
-| `type`         | string   | Filter by type: `ONE_TIME`, `COURSE`, `CLUB` (optional)  |
-| `minAge`       | int      | Minimum age (optional)                                   |
-| `maxAge`       | int      | Maximum age (optional)                                   |
-| `minPrice`     | decimal  | Minimum price (optional)                                 |
-| `maxPrice`     | decimal  | Maximum price (optional)                                 |
-| `sortBy`       | string   | Field to sort by: `price`, `nextSessionDate` (optional)  |
-| `sortDirection`| string   | `asc` or `desc` (optional)                               |
-| `page`         | int      | Page number (default: 0)                                 |
-| `size`         | int      | Results per page (default: 10)                           |
+| Name         | Type     | Description                                        |
+|--------------|----------|----------------------------------------------------|
+| `q`          | string   | Search keyword (title + description)               |
+| `category`   | string   | Exact match category filter                        |
+| `type`       | string   | One of: `COURSE`, `ONE_TIME`, `CLUB`               |
+| `minAge`     | int      | Minimum age                                        |
+| `maxAge`     | int      | Maximum age                                        |
+| `minPrice`   | decimal  | Minimum course price                               |
+| `maxPrice`   | decimal  | Maximum course price                               |
+| `startDate`  | ISO date | Show courses starting on or after this date        |
+| `sort`       | string   | `upcoming` (default), `priceAsc`, `priceDesc`      |
+| `page`       | int      | Page number (default = 0)                          |
+| `size`       | int      | Page size (default = 10)                           |
 
-#### Example Requests
+### Example:
 
-- **Basic Search**
-    ```bash
-    curl "http://localhost:8080/api/search/?query=math"
-    ```
-- **Filter by Category and Type**
-    ```bash
-    curl "http://localhost:8080/api/search/?category=STEM&type=COURSE"
-    ```
-- **Age and Price Range**
-    ```bash
-    curl "http://localhost:8080/api/search/?minAge=8&maxAge=12&minPrice=50&maxPrice=200"
-    ```
-- **Sorted Results**
-    ```bash
-    curl "http://localhost:8080/api/search/?sortBy=price&sortDirection=asc"
-    ```
-- **Pagination**
-    ```bash
-    curl "http://localhost:8080/api/search/?page=1&size=20"
-    ```
-- **Combined Filters**
-    ```bash
-    curl "http://localhost:8080/api/search/?query=science&category=STEM&type=COURSE&minAge=10&maxPrice=150&sortBy=price&sortDirection=desc&page=0&size=10"
-    ```
+```bash
+curl "http://localhost:8080/api/search?q=science&category=Science&minAge=8&maxPrice=1500&sort=priceAsc&page=0&size=5"
+```
 
-#### Example Response
+---
+
+## ✅ Sample Response
 
 ```json
 {
-  "content": [
+  "total": 34,
+  "courses": [
     {
-      "id": 1,
-      "title": "Math for Beginners",
-      "category": "STEM",
-      "type": "COURSE",
-      // ...
+      "id": "course-001",
+      "title": "Fun Science",
+      "category": "Science",
+      "price": 999.99,
+      "nextSessionDate": "2025-07-20T10:00:00Z"
     }
-  ],
-  "pageable": {
-    "pageNumber": 0,
-    "pageSize": 10
-  },
-  "totalElements": 12,
-  "totalPages": 2
+  ]
 }
 ```
 
-#### Filtering & Sorting
-
-- **Category/Type**: exact match
-- **Age/Price**: inclusive range
-- **Text Search**: partial matches in title/description
-- **Default sorting**: by relevance  
-  Custom sort by `price` (numeric) or `nextSessionDate` (chronological)
-
 ---
 
-## ✨ Advanced Features
+## 🗂 Project Structure
 
-### Autocomplete
-
-The `query` parameter supports autocomplete:
-```bash
-curl "http://localhost:8080/api/search/?query=mat"
 ```
-Returns matches like "math", "mathematics", etc.
-
-### Fuzzy Search
-
-Add a tilde (`~`) for fuzzy matching:
-```bash
-curl "http://localhost:8080/api/search/?query=mathmatics~"
+src/main/java/com/yourapp/
+├── config/         # Elasticsearch configuration
+├── controller/     # REST API controller
+├── document/       # CourseDocument model
+├── repository/     # Custom ES query repository
+├── service/        # Search service logic
+└── util/           # Helper utilities (if any)
 ```
-Returns close matches, e.g., "mathematics" for typos.
 
 ---
 
-## 🛠️ Troubleshooting
+## 📋 Submission Checklist
 
-- **Elasticsearch not responding:**
-    ```bash
-    docker ps
-    docker logs <container-id>
-    ```
-- **Application won't start:**
-    - Ensure Elasticsearch is running
-    - Check `mvn spring-boot:run` logs for errors
-    - Make sure port 8080 is free
+- [x] Elasticsearch runs via `docker-compose`
+- [x] `sample-courses.json` has at least 50 courses
+- [x] Spring Boot indexes data on startup
+- [x] `/api/search` supports all filters & sorting
+- [x] README includes setup & examples
 
 ---
 
-## 👩‍💻 Development
+## 🔗 Resources
 
-- To modify sample data, edit:  
-  `src/main/resources/data/courses.json`
-- To rebuild and reload:
-    ```bash
-    mvn clean package
-    mvn spring-boot:run
-    ```
+- 📘 [Spring Data Elasticsearch Docs](https://docs.spring.io/spring-data/elasticsearch/docs/current/reference/html/)
+- 🧠 [Elasticsearch Reference](https://www.elastic.co/guide/en/elasticsearch/reference/index.html)
 
 ---
 
-## 📄 License
-
-MIT (or your chosen license)
+> 📝 **Note:** If you're using the Elasticsearch Java API client (v8+), ensure your config matches host/port settings in `application.yml`.
